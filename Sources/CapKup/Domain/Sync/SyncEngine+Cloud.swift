@@ -203,6 +203,8 @@ extension SyncEngine {
                 NotificationCenter.default.post(name: Notification.Name("CloudRefreshRequested"), object: nil)
                 NotificationCenter.default.post(name: Notification.Name("LocalRefreshRequested"), object: nil)
             }
+            
+            self.cleanupTempFiles()
         }
         
         // Cần xử lý deleteQueue nếu download queue đã cạn

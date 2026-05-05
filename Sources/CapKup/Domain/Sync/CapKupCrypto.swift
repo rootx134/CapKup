@@ -101,7 +101,7 @@ enum CapKupCrypto {
     
     // MARK: - Direct Folder Stream Encrypt → .capkup (Pipe streaming)
     // Runs zip stdout directly into AES-256 without 50GB temp file on disk!
-    static func encryptFromDirectory(sourceDir: URL, outputCapkupURL: URL) throws {
+    static func encryptFromDirectory(sourceDir: URL, outputCapkupURL: URL, progressHandler: ((Double) -> Void)? = nil) throws {
         guard let userSecret = getUserSecret() else { throw CryptoError.noUserSecret }
         
         try? FileManager.default.removeItem(at: outputCapkupURL)
@@ -122,6 +122,18 @@ enum CapKupCrypto {
         header.append(salt)
         try outFile.write(contentsOf: header)
         
+        // Estimate total size for progress
+        var totalSize: Int64 = 0
+        if let enumerator = FileManager.default.enumerator(at: sourceDir, includingPropertiesForKeys: [.fileSizeKey]) {
+            for case let fileURL as URL in enumerator {
+                if let attrs = try? fileURL.resourceValues(forKeys: [.fileSizeKey]), let fileSize = attrs.fileSize {
+                    totalSize += Int64(fileSize)
+                }
+            }
+        }
+        if totalSize == 0 { totalSize = 1 } // avoid division by zero
+        var processedBytes: Int64 = 0
+        
         let zipProcess = Process()
         zipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
         zipProcess.currentDirectoryURL = sourceDir
@@ -138,6 +150,11 @@ enum CapKupCrypto {
                 guard let chunk = try pipeHandle.read(upToCount: chunkSize), !chunk.isEmpty else {
                     return true
                 }
+                
+                processedBytes += Int64(chunk.count)
+                var p = Double(processedBytes) / Double(totalSize)
+                if p > 1.0 { p = 1.0 }
+                progressHandler?(p)
                 
                 let nonce = AES.GCM.Nonce()
                 let sealedBox = try AES.GCM.seal(chunk, using: key, nonce: nonce)
@@ -160,6 +177,7 @@ enum CapKupCrypto {
         if zipProcess.terminationStatus != 0 {
             throw CryptoError.encryptionFailed
         }
+        progressHandler?(1.0)
     }
     
     // MARK: - Decrypt .capkup → ZIP (Streaming)

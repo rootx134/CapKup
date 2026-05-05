@@ -319,6 +319,21 @@ class SyncEngine {
                 NotificationCenter.default.post(name: Notification.Name("CloudRefreshRequested"), object: nil)
                 NotificationCenter.default.post(name: Notification.Name("LocalRefreshRequested"), object: nil)
             }
+            
+            // Tự động dọn file tạm / file rác
+            self.cleanupTempFiles()
+        }
+    }
+    
+    func cleanupTempFiles() {
+        let tmp = FileManager.default.temporaryDirectory
+        guard let files = try? FileManager.default.contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil) else { return }
+        
+        for file in files {
+            let name = file.lastPathComponent
+            if name.hasPrefix("capkup_staging_") || name.hasSuffix(".capkup") || name.hasPrefix("dl_") || name.hasPrefix("dec_") || name.hasPrefix("ex_") {
+                try? FileManager.default.removeItem(at: file)
+            }
         }
     }
     
@@ -333,7 +348,10 @@ class SyncEngine {
         // ─────────────────────────────────────────────────────────────────────
         // BƯỚC 0: Upload thumbnail (draft_cover.jpg) lên Drive (không ảnh hưởng luồng chính)
         // ─────────────────────────────────────────────────────────────────────
-        await MainActor.run { self.currentPhase = .preparing }
+        await MainActor.run { 
+            self.currentPhase = .preparing 
+            self.currentProgress = 0.05
+        }
         let coverURL = originalURL.appendingPathComponent("draft_cover.jpg")
         if FileManager.default.fileExists(atPath: coverURL.path) {
             self.currentFile = "Đang upload thumbnail..."
@@ -453,7 +471,14 @@ class SyncEngine {
         defer { try? FileManager.default.removeItem(at: tempZipURL) }
         
         self.currentFile = "Đang nén & mã hoá tĩnh (Streaming)..."
-        try CapKupCrypto.encryptFromDirectory(sourceDir: stagingURL, outputCapkupURL: tempZipURL)
+        try CapKupCrypto.encryptFromDirectory(sourceDir: stagingURL, outputCapkupURL: tempZipURL) { [weak self] p in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.currentProgress = 0.1 + (p * 0.2) // 0.1 -> 0.3
+                let pct = Int(p * 100)
+                self.currentFile = "Đang nén & mã hoá... \(pct)%"
+            }
+        }
         
         // Check cancel
         if await MainActor.run(body: { self.isCancelled }) { throw CancellationError() }
@@ -461,8 +486,10 @@ class SyncEngine {
         // ─────────────────────────────────────────────────────────────────────
         // BƯỚC 5: Tải lên Drive
         // ─────────────────────────────────────────────────────────────────────
-        await MainActor.run { self.currentPhase = .uploading }
-        self.currentProgress = 0.5
+        await MainActor.run { 
+            self.currentPhase = .uploading 
+            self.currentProgress = 0.3
+        }
         self.currentFile = "Đang đẩy từng khối dữ liệu lên Drive..."
 
         let startUploadTime = Date()
@@ -478,7 +505,7 @@ class SyncEngine {
         ) { [weak self] uploadProgress in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                self.currentProgress = 0.5 + (uploadProgress * 0.5)
+                self.currentProgress = 0.3 + (uploadProgress * 0.6) // 0.3 -> 0.9
                 let pct = Int(uploadProgress * 100)
                 
                 // Calculate instantaneous speed
