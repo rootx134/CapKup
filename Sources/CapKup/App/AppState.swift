@@ -14,6 +14,25 @@ class AppState {
     var hasSelectedLocalFolder: Bool = false
     var localFolderURL: URL? = nil
     
+    init() {
+        if GoogleDriveService.shared.isAuthenticated {
+            self.isAuthenticated = true
+            
+            if let restoredURL = BookmarkManager.shared.restoreBookmark() {
+                self.localFolderURL = restoredURL
+                self.hasSelectedLocalFolder = true
+                self.currentScreen = .dashboard
+            } else if let autoDetected = Self.detectCapCutFolder() {
+                self.localFolderURL = autoDetected
+                self.hasSelectedLocalFolder = true
+                try? BookmarkManager.shared.saveBookmark(for: autoDetected)
+                self.currentScreen = .dashboard
+            } else {
+                self.currentScreen = .setup
+            }
+        }
+    }
+    
     // Cache cho Trên Máy
     var localProjects: [LocalProject] = []
     var selectedLocalProjectIDs: Set<String> = []
