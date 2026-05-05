@@ -71,7 +71,7 @@ enum CapKupCrypto {
         header.append(versionV3)
         header.append(flagEncrypted)
         header.append(salt)
-        outFile.write(header)
+        try outFile.write(contentsOf: header)
         
         // Stream chunks
         while true {
@@ -91,8 +91,8 @@ enum CapKupCrypto {
                 chunkHeader.append(Data(bytes: &chunkLength, count: 4))
                 chunkHeader.append(contentsOf: nonce)
                 
-                outFile.write(chunkHeader)
-                outFile.write(payload)
+                try outFile.write(contentsOf: chunkHeader)
+                try outFile.write(contentsOf: payload)
                 return false
             }
             if isDone { break }
@@ -120,7 +120,7 @@ enum CapKupCrypto {
         header.append(versionV3)
         header.append(flagEncrypted)
         header.append(salt)
-        outFile.write(header)
+        try outFile.write(contentsOf: header)
         
         let zipProcess = Process()
         zipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
@@ -149,8 +149,8 @@ enum CapKupCrypto {
                 chunkHeader.append(Data(bytes: &chunkLength, count: 4))
                 chunkHeader.append(contentsOf: nonce)
                 
-                outFile.write(chunkHeader)
-                outFile.write(payload)
+                try outFile.write(contentsOf: chunkHeader)
+                try outFile.write(contentsOf: payload)
                 return false
             }
             if isDone { break }
@@ -226,7 +226,7 @@ enum CapKupCrypto {
                 let sealedBox = try AES.GCM.SealedBox(nonce: nonce, ciphertext: ciphertext, tag: tag)
                 let plainChunk = try AES.GCM.open(sealedBox, using: key)
                 
-                outFile.write(plainChunk)
+                try outFile.write(contentsOf: plainChunk)
                 return false
             }
             if isDone { break }
