@@ -1,0 +1,19 @@
+.DS_Store
+/.build
+/Packages
+xcuserdata/
+DerivedData/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
+
+# OAuth credentials (NEVER commit real secrets)
+OAuthConfig.plist
+
+# Error logs
+CapKupSync_ErrorLog.txt
+
+# macOS build artifacts
+*.dmg
+*.app
+*.xcarchive

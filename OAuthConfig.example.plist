@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  CapKup Sync — OAuth Configuration Template
+  
+  SETUP INSTRUCTIONS:
+  1. Go to https://console.cloud.google.com/
+  2. Create a new project (or select existing)
+  3. Enable "Google Drive API"
+  4. Go to Credentials → Create Credentials → OAuth Client ID
+  5. Application type: "Desktop app" (or "macOS")
+  6. Copy the Client ID and Client Secret below
+  7. Save this file as "OAuthConfig.plist" (remove .example)
+  
+  IMPORTANT: Never commit OAuthConfig.plist to version control!
+-->
+<plist version="1.0">
+<dict>
+	<key>ClientID</key>
+	<string>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
+	<key>ClientSecret</key>
+	<string>YOUR_GOOGLE_CLIENT_SECRET</string>
+	<key>RedirectURI</key>
+	<string>com.googleusercontent.apps.YOUR_GOOGLE_CLIENT_ID:/oauth2callback</string>
+</dict>
+</plist>
