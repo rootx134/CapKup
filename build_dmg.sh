@@ -29,6 +29,8 @@ fi
 /usr/libexec/PlistBuddy -c "Set :CFBundleName CapKupSync" CapKupSync.app/Contents/Info.plist
 
 touch CapKupSync.app
+xattr -cr CapKupSync.app
+codesign --force --deep -s - CapKupSync.app
 
 echo "🗂  Preparing DMG contents..."
 rm -rf dmg_staging
